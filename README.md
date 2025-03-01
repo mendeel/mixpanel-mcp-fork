@@ -1,10 +1,20 @@
 # Mixpanel MCP
+[![smithery badge](https://smithery.ai/badge/@dragonkhoi/mixpanel-mcp)](https://smithery.ai/server/@dragonkhoi/mixpanel-mcp)
+
 Simple MCP server that interfaces with the Mixpanel API, allowing you to talk to your Mixpanel events data from any MCP client like Cursor or Claude Desktop
 
 ## Installation
 Make sure to go to your Mixpanel Organization Settings to set up a [Mixpanel Service Account](https://developer.mixpanel.com/reference/service-accounts), get the username, password, and your project ID (in Mixpanel Project Settings).
 
 Pass these as your arguments in the command: `<USERNAME> <PW> <PROJECT_ID>`
+
+### Installing via Smithery
+
+To install mixpanel-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@dragonkhoi/mixpanel-mcp):
+
+```bash
+npx -y @smithery/cli install @dragonkhoi/mixpanel-mcp --client claude
+```
 
 ### Remote 1-line command
 Coming soon
