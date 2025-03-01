@@ -12,6 +12,14 @@ Make sure to go to your Mixpanel Organization Settings to set up a [Mixpanel Ser
 
 Pass these as your arguments in the command: `<USERNAME> <PW> <PROJECT_ID>`
 
+### Installing via Smithery
+
+To install mixpanel-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@dragonkhoi/mixpanel-mcp):
+
+```bash
+npx -y @smithery/cli install @dragonkhoi/mixpanel-mcp --client claude
+```
+
 ### Remote 1-line command
 Coming soon
 
