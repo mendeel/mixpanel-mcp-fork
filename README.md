@@ -10,8 +10,6 @@ I am adding more coverage of the Mixpanel API over time, let me know which tools
 ## Installation
 Make sure to go to your Mixpanel Organization Settings to set up a [Mixpanel Service Account](https://developer.mixpanel.com/reference/service-accounts), get the username, password, and your project ID (in Mixpanel Project Settings).
 
-Pass these as your arguments in the command: `<USERNAME> <PW> <PROJECT_ID>`
-
 ### Installing via Smithery
 
 To install mixpanel-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@dragonkhoi/mixpanel-mcp):
@@ -20,8 +18,11 @@ To install mixpanel-mcp for Claude Desktop automatically via [Smithery](https://
 npx -y @smithery/cli install @dragonkhoi/mixpanel-mcp --client claude
 ```
 
-### Remote 1-line command
-Coming soon
+To install mixpanel-mcp for Cursor, go to Settings -> Cursor Settings -> Features -> MCP Servers -> + Add
+Select Type: command and paste the below, using the arguments `<USERNAME> <PW> <PROJECT_ID>` from Mixpanel
+```
+npx -y @smithery/cli@latest run @dragonkhoi/mixpanel-mcp --config "{\"username\":\"YOUR_SERVICE_ACCT_USERNAME\",\"password\":\"YOUR_SERVICE_ACCT_PASSWORD\",\"projectId\":\"YOUR_MIXPANEL_PROJECT_ID\"}"
+```
 
 ### Clone and run locally
 Clone this repo
