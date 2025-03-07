@@ -562,6 +562,8 @@ server.tool(
       }
       
       const data = await response.json();
+
+      console.log(data);
       
       // Format the results
       let resultText = `# Funnel Report\n\n`;
