@@ -514,11 +514,11 @@ server.tool(
 
 server.tool(
   "query_funnel_report",
-  "Get data for a funnel",
+  "Get data for a funnel based on a funnel_id. Funnel IDs should be retrieved using the list_saved_funnels tool.",
   {
     project_id: z.string().describe("The Mixpanel project ID").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
-    funnel_id: z.string().describe("The funnel that you wish to get data for"),
+    funnel_id: z.string().describe("The Mixpanel funnel ID that you wish to get data for"),
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     length: z.number().optional().describe("The number of units each user has to complete the funnel"),
@@ -624,7 +624,7 @@ server.tool(
 
 server.tool(
   "list_saved_funnels",
-  "Get the names and IDs of your saved funnels",
+  "Get the names and IDs of your saved funnels. This tool is useful for getting a funnel_id for the query_funnel_report tool.",
   {
     project_id: z.string().describe("The Mixpanel project ID").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
