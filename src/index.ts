@@ -20,10 +20,10 @@ const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2] || "YOUR PR
 
 server.tool(
   "get_today_top_events",
-  "Get today's top events from Mixpanel",
+  "Get today's top events from Mixpanel. Useful for quickly identifying the most active events happening today, spotting trends, and monitoring real-time user activity.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
-    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch, either general, total, or unique, defaults to general").optional(),
     limit: z.number().optional().describe("Maximum number of events to return"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, type = "general", limit = 10 }) => {
@@ -94,11 +94,61 @@ server.tool(
 )
 
 server.tool(
-  "get_top_events",
-  "Get a list of the most common events over the last 31 days",
+  "profile_event_activity",
+  "Get data for a profile's event activity. Useful for understanding individual user journeys, troubleshooting user-specific issues, and analyzing behavior patterns of specific users.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
-    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    distinct_ids: z.string().describe("A JSON array as a string representing the `distinct_ids` to return activity feeds for. Example: `[\"12a34aa567eb8d-9ab1c26f345b67-89123c45-6aeaa7-89f12af345f678\"]`"),
+    from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
+    to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
+  },
+  async ({ project_id = DEFAULT_PROJECT_ID, workspace_id, distinct_ids, from_date, to_date }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct URL with query parameters
+      let url = `https://mixpanel.com/api/query/stream/query?project_id=${project_id}&distinct_ids=${encodeURIComponent(distinct_ids)}&from_date=${from_date}&to_date=${to_date}`;
+      
+      // Add optional workspace_id if provided
+      if (workspace_id) {
+        url += `&workspace_id=${workspace_id}`;
+      }
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile event activity:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "get_top_events",
+  "Get a list of the most common events over the last 31 days. Useful for identifying key user actions, prioritizing feature development, and understanding overall platform usage patterns.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch, either general, total, or unique, defaults to general").optional(),
     limit: z.number().optional().describe("Maximum number of events to return"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, type = "general", limit = 10 }) => {
@@ -159,11 +209,11 @@ server.tool(
 
 server.tool(
   "aggregate_event_counts",
-  "Get unique, total, or average data for a set of events over N days, weeks, or months",
+  "Get unique, total, or average data for a set of events over N days, weeks, or months. Useful for trend analysis, comparing event performance over time, and creating time-series visualizations.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     events: z.string().describe("The event or events that you wish to get data for, encoded as a JSON array. Example format: \"[\"play song\", \"log in\", \"add playlist\"]\""),
-    type: z.enum(["general", "total", "unique", "average"]).describe("The type of data to fetch").optional(),
+    type: z.enum(["general", "total", "unique", "average"]).describe("The type of data to fetch, either general, total, unique, or average, defaults to general").optional(),
     unit: z.enum(["minute", "hour", "day", "week", "month"]).describe("The level of granularity of the data you get back"),
     interval: z.number().optional().describe("The number of units to return data for. Specify either interval or from_date and to_date"),
     from_date: z.string().optional().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
@@ -293,20 +343,20 @@ server.tool(
 
 server.tool(
   "aggregated_event_property_values",
-  "Get unique, total, or average data for a single event and property over days, weeks, or months",
+  "Get unique, total, or average data for a single event and property over days, weeks, or months. Useful for analyzing how specific properties affect event performance, segmenting users, and identifying valuable user attributes.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     event: z.string().describe("The event that you wish to get data for (a single event name, not an array)"),
     name: z.string().describe("The name of the property you would like to get data for"),
     values: z.string().optional().describe("The specific property values to get data for, encoded as a JSON array. Example: \"[\"female\", \"unknown\"]\""),
-    type: z.enum(["general", "unique", "average"]).describe("The analysis type - general, unique, or average events"),
+    type: z.enum(["general", "unique", "average"]).describe("The analysis type - general, unique, or average events, defaults to general").optional(),
     unit: z.enum(["minute", "hour", "day", "week", "month"]).describe("The level of granularity of the data (minute, hour, day, week, or month)"),
     interval: z.number().optional().describe("The number of units to return data for. Specify either interval or from_date and to_date"),
     from_date: z.string().optional().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().optional().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     limit: z.number().optional().describe("The maximum number of values to return (default: 255)"),
   },
-  async ({ project_id = DEFAULT_PROJECT_ID, event, name, values, type, unit, interval, from_date, to_date, limit }) => {
+  async ({ project_id = DEFAULT_PROJECT_ID, event, name, values, type = "general", unit, interval, from_date, to_date, limit }) => {
     try {
       // Create authorization header using base64 encoding of credentials
       const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
@@ -446,9 +496,9 @@ server.tool(
 
 server.tool(
   "query_insights_report",
-  "Get data from your Insights reports",
+  "Get data from your Insights reports. Useful for accessing saved analyses, sharing standardized metrics across teams, and retrieving complex pre-configured visualizations.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
     bookmark_id: z.string().describe("The ID of your Insights report"),
   },
@@ -514,9 +564,9 @@ server.tool(
 
 server.tool(
   "query_funnel_report",
-  "Get data for a funnel based on a funnel_id. Funnel IDs should be retrieved using the list_saved_funnels tool.",
+  "Get data for a funnel based on a funnel_id. Useful for analyzing user conversion paths, identifying drop-off points in user journeys, and optimizing multi-step processes. Funnel IDs should be retrieved using the list_saved_funnels tool. ",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
     funnel_id: z.string().describe("The Mixpanel funnel ID that you wish to get data for"),
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
@@ -624,9 +674,9 @@ server.tool(
 
 server.tool(
   "list_saved_funnels",
-  "Get the names and IDs of your saved funnels. This tool is useful for getting a funnel_id for the query_funnel_report tool.",
+  "Get the names and IDs of your saved funnels. Useful for discovering available funnels for analysis and retrieving funnel IDs needed for the query_funnel_report tool.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, workspace_id }) => {
@@ -699,9 +749,9 @@ server.tool(
 
 server.tool(
   "list_saved_cohorts",
-  "Get all cohorts in a given project",
+  "Get all cohorts in a given project. Useful for discovering user segments, planning targeted analyses, and retrieving cohort IDs for filtering in other reports.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, workspace_id }) => {
@@ -776,17 +826,31 @@ server.tool(
 
 server.tool(
   "query_retention_report",
-  "Get data from your Retention reports",
+  "Get data from your Retention reports. Useful for analyzing user engagement over time, measuring product stickiness, and understanding how well your product retains users after specific actions.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     retention_type: z.enum(["birth", "compounded"]).optional().describe("Type of retention: 'birth' (first time) or 'compounded' (recurring). Defaults to 'birth'"),
     born_event: z.string().optional().describe("The first event a user must do to be counted in a birth retention cohort"),
     return_event: z.string().optional().describe("The event to generate returning counts for. If not specified, looks across all events"),
-    born_where: z.string().optional().describe("An expression to filter born_events by"),
-    return_where: z.string().optional().describe("An expression to filter return events by"),
+    born_where: z.string().optional().describe(`An expression to filter born_events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
+    return_where: z.string().optional().describe(`An expression to filter return events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
     interval: z.number().optional().describe("The number of units per individual bucketed interval. Default is 1"),
     interval_count: z.number().optional().describe("The number of individual buckets/intervals to return. Default is 1"),
     unit: z.enum(["day", "week", "month"]).optional().describe("The interval unit: 'day', 'week', or 'month'. Default is 'day'"),
@@ -895,9 +959,9 @@ server.tool(
 
 server.tool(
   "custom_jql",
-  "Run a custom JQL (JSON Query Language) script against your Mixpanel data",
+  "Run a custom JQL (JSON Query Language) script against your Mixpanel data. Useful for complex custom analyses, advanced data transformations, and queries that can't be handled by standard report types.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
     script: z.string().describe("The JQL script to run (JavaScript code that uses Mixpanel's JQL functions)"),
     params: z.string().optional().describe("A JSON string containing parameters to pass to the script (will be available as the 'params' variable)")
@@ -1012,16 +1076,23 @@ server.tool(
 
 server.tool(
   "query_segmentation_sum",
-  "Sum a numeric expression for events over time",
+  "Sum a numeric expression for events over time. Useful for calculating revenue metrics, aggregating quantitative values, and tracking cumulative totals across different time periods.",
   {
-    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
     event: z.string().describe("The event that you wish to get data for (single event name, not an array)"),
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     on: z.string().describe("The expression to sum per unit time (should result in a numeric value)"),
     unit: z.enum(["hour", "day"]).optional().describe("Time bucket size: 'hour' or 'day'. Default is 'day'"),
-    where: z.string().optional().describe("An expression to filter events by")
+    where: z.string().optional().describe(`An expression to filter events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, workspace_id, event, from_date, to_date, on, unit, where }) => {
     try {
@@ -1101,6 +1172,516 @@ server.tool(
           }
         ]
       };
+    }
+  }
+);
+
+server.tool(
+  "query_profiles",
+  "Query Mixpanel user profiles with filtering options. Useful for retrieving detailed user profiles, filtering by specific properties, and analyzing user behavior across different dimensions.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    distinct_id: z.string().describe("A unique identifier used to distinguish an individual profile").optional(),
+    distinct_ids: z.string().describe("A JSON array of distinct_ids to retrieve profiles for. Example: '[\"id1\", \"id2\"]'").optional(),
+    data_group_id: z.string().describe("The ID of the group key, used when querying group profiles").optional(),
+    where: z.string().describe(`An expression to filter users (or groups) by. Using the following grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <typecast op> '(' <expression> ')'
+                | '(' <expression> ')'
+                | <boolean literal>
+                | <numeric literal>
+                | <string literal>
+  <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+   <unary op> ::= '-' | 'not'
+    <math op> ::= 'floor' | 'round' | 'ceil'
+<typecast op> ::= 'boolean' | 'number' | 'string'
+   <property> ::= 'properties["' <property name> '"]'`).optional(),
+    output_properties: z.string().describe("A JSON array of names of properties you want returned. Example: '[\"$last_name\", \"$email\", \"Total Spent\"]'").optional(),
+    session_id: z.string().describe("A string id provided in the results of a previous query. Using a session_id speeds up api response, and allows paging through results").optional(),
+    page: z.number().describe("Which page of the results to retrieve. Pages start at zero. If the 'page' parameter is provided, the session_id parameter must also be provided").optional(),
+    behaviors: z.number().describe("If you are exporting user profiles using an event selector, you use a 'behaviors' parameter in your request").optional(),
+    as_of_timestamp: z.number().describe("This parameter is only useful when also using 'behaviors'").optional(),
+    filter_by_cohort: z.string().describe("Takes a JSON object with a single key called 'id' whose value is the cohort ID. Example: '{\"id\":12345}'").optional(),
+    include_all_users: z.boolean().describe("Only applicable with 'filter_by_cohort' parameter. Default is true").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    distinct_id, 
+    distinct_ids, 
+    data_group_id, 
+    where, 
+    output_properties, 
+    session_id, 
+    page, 
+    behaviors, 
+    as_of_timestamp, 
+    filter_by_cohort, 
+    include_all_users 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with project_id
+      let url = `https://mixpanel.com/api/query/engage?project_id=${project_id}`;
+      
+      // Add optional workspace_id if provided
+      if (workspace_id) {
+        url += `&workspace_id=${workspace_id}`;
+      }
+      
+      // Create form data for POST request
+      const formData = new URLSearchParams();
+      
+      // Add optional parameters to form data if they exist
+      if (distinct_id) formData.append('distinct_id', distinct_id);
+      if (distinct_ids) formData.append('distinct_ids', distinct_ids);
+      if (data_group_id) formData.append('data_group_id', data_group_id);
+      if (where) formData.append('where', where);
+      if (output_properties) formData.append('output_properties', output_properties);
+      if (session_id) formData.append('session_id', session_id);
+      if (page !== undefined) formData.append('page', page.toString());
+      if (behaviors !== undefined) formData.append('behaviors', behaviors.toString());
+      if (as_of_timestamp !== undefined) formData.append('as_of_timestamp', as_of_timestamp.toString());
+      if (filter_by_cohort) formData.append('filter_by_cohort', filter_by_cohort);
+      if (include_all_users !== undefined) formData.append('include_all_users', include_all_users.toString());
+      
+      // Set up request options
+      const options = {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`,
+          'content-type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying profiles:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "query_frequency_report",
+  "Get data for frequency of actions over time. Useful for analyzing how often users perform specific actions, identifying patterns of behavior, and tracking user engagement over time.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
+    to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
+    unit: z.enum(["day", "week", "month"]).describe("The overall time period to return frequency of actions for"),
+    addiction_unit: z.enum(["hour", "day"]).describe("The granularity to return frequency of actions at"),
+    event: z.string().describe("The event to generate returning counts for").optional(),
+    where: z.string().describe(`An expression to filter the returning events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
+    on: z.string().describe("The property expression to segment the second event on").optional(),
+    limit: z.number().describe("Return the top limit segmentation values. This parameter does nothing if 'on' is not specified").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    from_date, 
+    to_date, 
+    unit, 
+    addiction_unit, 
+    event, 
+    where, 
+    on, 
+    limit 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/retention/addiction?project_id=${project_id}&from_date=${from_date}&to_date=${to_date}&unit=${unit}&addiction_unit=${addiction_unit}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (event) url += `&event=${encodeURIComponent(event)}`;
+      if (where) url += `&where=${encodeURIComponent(where)}`;
+      if (on) url += `&on=${encodeURIComponent(on)}`;
+      if (limit !== undefined) url += `&limit=${limit}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying frequency report:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "query_segmentation_report",
+  "Get data for an event, segmented and filtered by properties. Useful for breaking down event data by user attributes, comparing performance across segments, and identifying which user groups perform specific actions.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    event: z.string().describe("The event that you wish to get data for. Note: this is a single event name, not an array"),
+    from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
+    to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
+    on: z.string().describe("The property expression to segment the event on").optional(),
+    unit: z.enum(["minute", "hour", "day", "month"]).describe("The buckets into which the property values that you segment on are placed. Default is 'day'").optional(),
+    interval: z.number().describe("Optional parameter in lieu of 'unit' when 'type' is not 'general'. Determines the number of days your results are bucketed into").optional(),
+    where: z.string().describe(`An expression to filter events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
+    limit: z.number().describe("Return the top property values. Defaults to 60. Maximum value 10,000. This parameter does nothing if 'on' is not specified").optional(),
+    type: z.enum(["general", "unique", "average"]).describe("The type of analysis to perform, either general, unique, or average, defaults to general").optional(),
+    format: z.enum(["csv"]).describe("Can be set to 'csv'").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    event, 
+    from_date, 
+    to_date, 
+    on, 
+    unit, 
+    interval, 
+    where, 
+    limit, 
+    type, 
+    format 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/segmentation?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (on) url += `&on=${encodeURIComponent(on)}`;
+      if (unit) url += `&unit=${unit}`;
+      if (interval !== undefined) url += `&interval=${interval}`;
+      if (where) url += `&where=${encodeURIComponent(where)}`;
+      if (limit !== undefined) url += `&limit=${limit}`;
+      if (type) url += `&type=${type}`;
+      if (format) url += `&format=${format}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying segmentation report:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "query_segmentation_bucket",
+  "Get data for an event, segmented and filtered by properties, with values placed into numeric buckets. Useful for analyzing distributions of numeric values, creating histograms, and understanding the range of quantitative metrics.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    event: z.string().describe("The event that you wish to get data for. Note: this is a single event name, not an array"),
+    from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
+    to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
+    on: z.string().describe("The property expression to segment the event on. This expression must be a numeric property"),
+    unit: z.enum(["hour", "day"]).describe("The buckets into which the property values that you segment on are placed. Default is 'day'").optional(),
+    where: z.string().describe(`An expression to filter events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`),
+    type: z.enum(["general", "unique", "average"]).describe("The type of analysis to perform, either general, unique, or average, defaults to general").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    event, 
+    from_date, 
+    to_date, 
+    on, 
+    unit, 
+    where, 
+    type 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/segmentation/numeric?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (unit) url += `&unit=${unit}`;
+      if (where) url += `&where=${encodeURIComponent(where)}`;
+      if (type) url += `&type=${type}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying segmentation bucket:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "query_segmentation_average",
+  "Averages an expression for events per unit time. Useful for calculating average values like purchase amounts, session durations, or any numeric metric, and tracking how these averages change over time.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    event: z.string().describe("The event that you wish to get data for. Note: this is a single event name, not an array"),
+    from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
+    to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
+    on: z.string().describe("The expression to average per unit time. The result of the expression should be a numeric value"),
+    unit: z.enum(["hour", "day"]).describe("The buckets [hour, day] into which the property values are placed. Default is 'day'").optional(),
+    where: z.string().describe(`An expression to filter events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
+                | <expression> <binary op> <expression>
+                | <unary op> <expression>
+                | <math op> '(' <expression> ')'
+                | <string literal>
+   <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
+                  '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
+                | <unary op> ::= '-' | 'not'`).optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    event, 
+    from_date, 
+    to_date, 
+    on, 
+    unit, 
+    where 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/segmentation/average?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (unit) url += `&unit=${unit}`;
+      if (where) url += `&where=${encodeURIComponent(where)}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error querying segmentation average:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "top_event_properties",
+  "Get the top property names for an event. Useful for discovering which properties are most commonly associated with an event, prioritizing which dimensions to analyze, and understanding event structure.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    event: z.string().describe("The event that you wish to get data for. Note: this is a single event name, not an array"),
+    limit: z.number().describe("The maximum number of properties to return. Defaults to 10").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    event, 
+    limit 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/events/properties/top?project_id=${project_id}&event=${encodeURIComponent(event)}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (limit !== undefined) url += `&limit=${limit}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching top event properties:', error);
+      throw error;
+    }
+  }
+);
+
+server.tool(
+  "top_event_property_values",
+  "Get the top values for a property. Useful for understanding the distribution of values for a specific property, identifying the most common categories or segments, and planning further targeted analyses.",
+  {
+    project_id: z.string().describe("The Mixpanel project ID").optional(),
+    workspace_id: z.string().describe("The ID of the workspace if applicable").optional(),
+    event: z.string().describe("The event that you wish to get data for. Note: this is a single event name, not an array"),
+    name: z.string().describe("The name of the property you would like to get data for"),
+    limit: z.number().describe("The maximum number of values to return. Defaults to 255").optional(),
+  },
+  async ({ 
+    project_id = DEFAULT_PROJECT_ID, 
+    workspace_id, 
+    event, 
+    name,
+    limit 
+  }) => {
+    try {
+      // Create authorization header using base64 encoding of credentials
+      const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
+      const encodedCredentials = Buffer.from(credentials).toString('base64');
+      
+      // Construct base URL with required parameters
+      let url = `https://mixpanel.com/api/query/events/properties/values?project_id=${project_id}&event=${encodeURIComponent(event)}&name=${encodeURIComponent(name)}`;
+      
+      // Add optional parameters if they exist
+      if (workspace_id) url += `&workspace_id=${workspace_id}`;
+      if (limit !== undefined) url += `&limit=${limit}`;
+      
+      // Set up request options
+      const options = {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'authorization': `Basic ${encodedCredentials}`
+        }
+      };
+      
+      // Make the API request
+      const response = await fetch(url, options);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching top event property values:', error);
+      throw error;
     }
   }
 );
