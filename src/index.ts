@@ -23,7 +23,7 @@ server.tool(
   "Get today's top events from Mixpanel. Useful for quickly identifying the most active events happening today, spotting trends, and monitoring real-time user activity.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
-    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch, either general, total, or unique, defaults to general").optional(),
+    type: z.enum(["general", "average", "unique"]).describe("The type of events to fetch, either general, average, or unique, defaults to general").optional(),
     limit: z.number().optional().describe("Maximum number of events to return"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, type = "general", limit = 10 }) => {
@@ -148,7 +148,7 @@ server.tool(
   "Get a list of the most common events over the last 31 days. Useful for identifying key user actions, prioritizing feature development, and understanding overall platform usage patterns.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
-    type: z.enum(["general", "total", "unique"]).describe("The type of events to fetch, either general, total, or unique, defaults to general").optional(),
+    type: z.enum(["general", "average", "unique"]).describe("The type of events to fetch, either general, average, or unique, defaults to general").optional(),
     limit: z.number().optional().describe("Maximum number of events to return"),
   },
   async ({ project_id = DEFAULT_PROJECT_ID, type = "general", limit = 10 }) => {
@@ -209,11 +209,11 @@ server.tool(
 
 server.tool(
   "aggregate_event_counts",
-  "Get unique, total, or average data for a set of events over N days, weeks, or months. Useful for trend analysis, comparing event performance over time, and creating time-series visualizations.",
+  "Get unique, general, or average data for a set of events over N days, weeks, or months. Useful for trend analysis, comparing event performance over time, and creating time-series visualizations.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     events: z.string().describe("The event or events that you wish to get data for, encoded as a JSON array. Example format: \"[\"play song\", \"log in\", \"add playlist\"]\""),
-    type: z.enum(["general", "total", "unique", "average"]).describe("The type of data to fetch, either general, total, unique, or average, defaults to general").optional(),
+    type: z.enum(["general", "unique", "average"]).describe("The type of data to fetch, either general, unique, or average, defaults to general").optional(),
     unit: z.enum(["minute", "hour", "day", "week", "month"]).describe("The level of granularity of the data you get back"),
     interval: z.number().optional().describe("The number of units to return data for. Specify either interval or from_date and to_date"),
     from_date: z.string().optional().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
@@ -343,7 +343,7 @@ server.tool(
 
 server.tool(
   "aggregated_event_property_values",
-  "Get unique, total, or average data for a single event and property over days, weeks, or months. Useful for analyzing how specific properties affect event performance, segmenting users, and identifying valuable user attributes.",
+  "Get unique, general, or average data for a single event and property over days, weeks, or months. Useful for analyzing how specific properties affect event performance, segmenting users, and identifying valuable user attributes.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     event: z.string().describe("The event that you wish to get data for (a single event name, not an array)"),
