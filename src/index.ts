@@ -212,14 +212,14 @@ server.tool(
   "Get unique, general, or average data for a set of events over N days, weeks, or months. Useful for trend analysis, comparing event performance over time, and creating time-series visualizations.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
-    events: z.string().describe("The event or events that you wish to get data for, encoded as a JSON array. Example format: \"[\"play song\", \"log in\", \"add playlist\"]\""),
+    event: z.string().describe("The event or events that you wish to get data for, a string encoded as a JSON array. Example format: \"[\"play song\", \"log in\", \"add playlist\"]\""),
     type: z.enum(["general", "unique", "average"]).describe("The type of data to fetch, either general, unique, or average, defaults to general").optional(),
     unit: z.enum(["minute", "hour", "day", "week", "month"]).describe("The level of granularity of the data you get back"),
     interval: z.number().optional().describe("The number of units to return data for. Specify either interval or from_date and to_date"),
     from_date: z.string().optional().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().optional().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
   },
-  async ({ project_id = DEFAULT_PROJECT_ID, events, type = "general", unit, interval, from_date, to_date }) => {
+  async ({ project_id = DEFAULT_PROJECT_ID, event, type = "general", unit, interval, from_date, to_date }) => {
     try {
       // Create authorization header using base64 encoding of credentials
       const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
@@ -233,7 +233,7 @@ server.tool(
       // Parse events to ensure it's a valid JSON array
       let parsedEvents;
       try {
-        parsedEvents = JSON.parse(events);
+        parsedEvents = JSON.parse(event);
         if (!Array.isArray(parsedEvents)) {
           throw new Error("Events must be a JSON array");
         }
@@ -257,7 +257,7 @@ server.tool(
       }
       
       // Add events parameter
-      queryParams.append('event', events);
+      queryParams.append('event', event);
       
       // Construct URL with query parameters
       const url = `https://mixpanel.com/api/query/events?${queryParams.toString()}`;
