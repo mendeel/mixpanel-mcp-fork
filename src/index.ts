@@ -54,30 +54,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Define interface for event data
-      interface MixpanelEvent {
-        event: string;
-        amount: number;
-        percent_change: number;
-      }
-      
-      // Format the results with proper typing
-      const events = data.events.map((event: MixpanelEvent) => ({
-        name: event.event,
-        count: event.amount,
-        percent_change: (event.percent_change * 100).toFixed(2) + '%'
-      }));
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: `# Top ${events.length} Events (${type}) in Mixpanel (Project ID: ${project_id})\n\n` +
-                  `${events.map((e: {name: string, count: number, percent_change: string}) => 
-                    `- **${e.name}**: ${e.count} events (${e.percent_change} change)`).join('\n')}`
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel events:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -179,19 +156,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      const events = data.slice(0, limit);
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: `# Top ${events.length} Event Names Over Last 31 Days (Project ID: ${project_id})\n\n` +
-                  `${events.map((event: string, index: number) => 
-                    `${index + 1}. **${event}**`).join('\n')}`
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel events:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -281,51 +246,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# Aggregate Event Counts (${type})\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Unit:** ${unit}\n`;
-      resultText += interval ? `**Interval:** ${interval} ${unit}s\n` : 
-                             `**Date Range:** ${from_date} to ${to_date}\n`;
-      resultText += `**Events:** ${parsedEvents.join(", ")}\n\n`;
-      
-      // Format the data based on structure
-      if (data.data && data.data.series && data.data.values) {
-        resultText += "## Results\n\n";
-        
-        // Get series (dates/times)
-        const series = data.data.series;
-        
-        // For each event, show the values across the series
-        for (const eventName in data.data.values) {
-          resultText += `### ${eventName}\n\n`;
-          
-          const values = data.data.values[eventName];
-          
-          // Create a table header
-          resultText += "| Date/Time | Count |\n";
-          resultText += "|-----------|-------|\n";
-          
-          // Add rows for each data point
-          series.forEach((date: string) => {
-            resultText += `| ${date} | ${values[date]} |\n`;
-          });
-          
-          resultText += "\n";
-        }
-      } else {
-        // Fallback for unexpected data structure
-        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```\n";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel event counts:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -429,56 +350,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# Aggregated Event Property Values (${type})\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Event:** ${event}\n`;
-      resultText += `**Property:** ${name}\n`;
-      resultText += `**Unit:** ${unit}\n`;
-      resultText += interval ? `**Interval:** ${interval} ${unit}s\n` : 
-                             `**Date Range:** ${from_date} to ${to_date}\n`;
-      if (parsedValues) {
-        resultText += `**Values:** ${parsedValues.join(", ")}\n`;
-      }
-      resultText += "\n";
-      
-      // Format the data based on structure
-      if (data.data && data.data.series && data.data.values) {
-        resultText += "## Results\n\n";
-        
-        // Get series (dates/times)
-        const series = data.data.series;
-        
-        // For each property value, show the values across the series
-        for (const propValue in data.data.values) {
-          resultText += `### "${propValue}"\n\n`;
-          
-          const values = data.data.values[propValue];
-          
-          // Create a table header
-          resultText += "| Date/Time | Count |\n";
-          resultText += "|-----------|-------|\n";
-          
-          // Add rows for each data point
-          series.forEach((date: string) => {
-            resultText += `| ${date} | ${values[date]} |\n`;
-          });
-          
-          resultText += "\n";
-        }
-      } else {
-        // Fallback for unexpected data structure
-        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```\n";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+     return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel event property values:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -535,18 +407,7 @@ server.tool(
       
       const data = await response.json();
       
-      return {
-        content: [
-          {
-            type: "text",
-            text: `# Insights Report Data\n\n` +
-                  `**Project ID:** ${project_id}\n` +
-                  `**Bookmark ID:** ${bookmark_id}\n\n` +
-                  `## Results\n\n` +
-                  "```json\n" + JSON.stringify(data, null, 2) + "\n```\n"
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel insights:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -613,50 +474,7 @@ server.tool(
       
       const data = await response.json();
 
-      // Format the results
-      let resultText = `# Funnel Report\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Funnel ID:** ${funnel_id}\n`;
-      resultText += `**Date Range:** ${from_date} to ${to_date}\n\n`;
-      
-      if (data.meta && data.data) {
-        resultText += "## Results by Date\n\n";
-        
-        for (const date of data.meta.dates) {
-          const dateData = data.data[date];
-          resultText += `### ${date}\n\n`;
-          
-          if (dateData.steps && dateData.steps.length > 0) {
-            // Create a table for steps
-            resultText += "| Step | Event | Count | Conversion Rate | Overall Rate |\n";
-            resultText += "|------|-------|-------|----------------|-------------|\n";
-            
-            dateData.steps.forEach((step: any, index: number) => {
-              resultText += `| ${index + 1} | ${step.goal || step.event} | ${step.count} | ${(step.step_conv_ratio * 100).toFixed(2)}% | ${(step.overall_conv_ratio * 100).toFixed(2)}% |\n`;
-            });
-            
-            resultText += "\n";
-            
-            // Add analysis
-            if (dateData.analysis) {
-              resultText += `**Starting Users:** ${dateData.analysis.starting_amount}\n`;
-              resultText += `**Completed Funnel:** ${dateData.analysis.completion}\n`;
-              resultText += `**Completion Rate:** ${((dateData.analysis.completion / dateData.analysis.starting_amount) * 100).toFixed(2)}%\n\n`;
-            }
-          }
-        }
-      } else {
-        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```\n";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel funnel data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -711,27 +529,7 @@ server.tool(
       
       const data = await response.json();
       
-      let resultText = `# Saved Funnels in Project ${project_id}\n\n`;
-      
-      if (Array.isArray(data) && data.length > 0) {
-        resultText += "| Funnel ID | Name |\n";
-        resultText += "|-----------|------|\n";
-        
-        data.forEach(funnel => {
-          resultText += `| ${funnel.funnel_id} | ${funnel.name} |\n`;
-        });
-      } else {
-        resultText += "No saved funnels found.";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel funnels list:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -786,29 +584,7 @@ server.tool(
       
       const data = await response.json();
       
-      let resultText = `# Saved Cohorts in Project ${project_id}\n\n`;
-      
-      if (Array.isArray(data) && data.length > 0) {
-        resultText += "| Cohort ID | Name | Count | Created | Visible |\n";
-        resultText += "|-----------|------|-------|---------|--------|\n";
-        
-        data.forEach(cohort => {
-          resultText += `| ${cohort.id} | ${cohort.name} | ${cohort.count} | ${cohort.created} | ${cohort.is_visible ? 'Yes' : 'No'} |\n`;
-        });
-        
-        resultText += "\n**Description of first cohort:** " + (data[0].description || "No description");
-      } else {
-        resultText += "No saved cohorts found.";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel cohorts list:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -899,49 +675,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# Retention Report\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
-      if (retention_type) resultText += `**Retention Type:** ${retention_type}\n`;
-      if (born_event) resultText += `**Born Event:** ${born_event}\n`;
-      if (return_event) resultText += `**Return Event:** ${return_event}\n`;
-      if (unit) resultText += `**Unit:** ${unit}\n`;
-      resultText += "\n";
-      
-      // Format the cohort data
-      resultText += "## Cohort Data\n\n";
-      
-      // Create a table for each cohort date
-      for (const date in data) {
-        if (date !== "status" && data[date]) {
-          resultText += `### Cohort: ${date}\n\n`;
-          
-          // Show first day count
-          resultText += `**First Day Count:** ${data[date].first}\n\n`;
-          
-          // Create a table for retention data
-          resultText += "| Period | Count | Retention Rate |\n";
-          resultText += "|--------|-------|---------------|\n";
-          
-          // Add rows for each retention period
-          data[date].counts.forEach((count: number, index: number) => {
-            const retentionRate = ((count / data[date].first) * 100).toFixed(2);
-            resultText += `| ${index + 1} | ${count} | ${retentionRate}% |\n`;
-          });
-          
-          resultText += "\n";
-        }
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel retention data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1005,60 +739,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# JQL Query [Mixpanel JQL is deprecated] Results\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      if (workspace_id) resultText += `**Workspace ID:** ${workspace_id}\n`;
-      resultText += `\n## Script\n\n\`\`\`javascript\n${script}\n\`\`\`\n\n`;
-      
-      if (params) {
-        resultText += `## Parameters\n\n\`\`\`json\n${params}\n\`\`\`\n\n`;
-      }
-      
-      resultText += `## Results\n\n`;
-      
-      // Format the results based on the structure
-      if (Array.isArray(data)) {
-        if (data.length === 0) {
-          resultText += "No results returned.";
-        } else {
-          // Check if the results are simple key-value pairs that can be displayed in a table
-          const firstItem = data[0];
-          const isSimpleObject = typeof firstItem === 'object' && 
-                                !Array.isArray(firstItem) && 
-                                Object.keys(firstItem).length <= 5;
-          
-          if (isSimpleObject) {
-            // Create a table header with all keys from the first item
-            const keys = Object.keys(firstItem);
-            resultText += "| " + keys.join(" | ") + " |\n";
-            resultText += "| " + keys.map(() => "---").join(" | ") + " |\n";
-            
-            // Add a row for each item
-            data.forEach(item => {
-              resultText += "| " + keys.map(key => {
-                const value = item[key];
-                return typeof value === 'object' ? JSON.stringify(value) : String(value);
-              }).join(" | ") + " |\n";
-            });
-          } else {
-            // For complex results, just show the JSON
-            resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
-          }
-        }
-      } else {
-        // For non-array results, just show the JSON
-        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error executing JQL query:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1130,37 +811,7 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# Segmentation Sum Report\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Event:** ${event}\n`;
-      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
-      resultText += `**Expression Summed:** ${on}\n`;
-      if (unit) resultText += `**Unit:** ${unit}\n`;
-      if (where) resultText += `**Filter:** ${where}\n`;
-      resultText += `**Computed At:** ${data.computed_at || 'Not provided'}\n\n`;
-      
-      // Create a table for the results
-      resultText += "## Results\n\n";
-      resultText += "| Date | Sum |\n";
-      resultText += "|------|-----|\n";
-      
-      // Sort dates in chronological order
-      const dates = Object.keys(data.results).sort();
-      
-      // Add rows for each date
-      for (const date of dates) {
-        resultText += `| ${date} | ${data.results[date]} |\n`;
-      }
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: resultText
-          }
-        ]
-      };
+      return data;
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel segmentation sum data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
