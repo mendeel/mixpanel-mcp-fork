@@ -3,6 +3,10 @@
 
 Simple MCP server that interfaces with the Mixpanel API, allowing you to talk to your Mixpanel events data from any MCP client like Cursor or Claude Desktop. Query events data, retention, and funnels. Great for on-demand look ups like: "What's the weekly retention for users in the Feb 1 cohort?"
 
+<a href="https://glama.ai/mcp/servers/3ymkqswmp4">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/3ymkqswmp4/badge" alt="mixpanel MCP server" />
+</a>
+
 I am adding more coverage of the Mixpanel API over time, let me know which tools you need or just open a PR.
 
 ## Installation
