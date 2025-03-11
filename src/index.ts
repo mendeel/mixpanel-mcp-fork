@@ -54,7 +54,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel events:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -112,10 +119,25 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error fetching profile event activity:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error fetching profile event activity: ${errorMessage}`
+          }
+        ]
+      };
     }
   }
 );
@@ -156,7 +178,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel events:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -246,7 +275,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel event counts:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -350,7 +386,14 @@ server.tool(
       
       const data = await response.json();
       
-     return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel event property values:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -407,7 +450,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel insights:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -474,7 +524,14 @@ server.tool(
       
       const data = await response.json();
 
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel funnel data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -529,7 +586,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel funnels list:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -584,7 +648,14 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel cohorts list:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -675,7 +746,49 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      // Format the results
+      let resultText = `# Retention Report\n\n`;
+      resultText += `**Project ID:** ${project_id}\n`;
+      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
+      if (retention_type) resultText += `**Retention Type:** ${retention_type}\n`;
+      if (born_event) resultText += `**Born Event:** ${born_event}\n`;
+      if (return_event) resultText += `**Return Event:** ${return_event}\n`;
+      if (unit) resultText += `**Unit:** ${unit}\n`;
+      resultText += "\n";
+      
+      // Format the cohort data
+      resultText += "## Cohort Data\n\n";
+      
+      // Create a table for each cohort date
+      for (const date in data) {
+        if (date !== "status" && data[date]) {
+          resultText += `### Cohort: ${date}\n\n`;
+          
+          // Show first day count
+          resultText += `**First Day Count:** ${data[date].first}\n\n`;
+          
+          // Create a table for retention data
+          resultText += "| Period | Count | Retention Rate |\n";
+          resultText += "|--------|-------|---------------|\n";
+          
+          // Add rows for each retention period
+          data[date].counts.forEach((count: number, index: number) => {
+            const retentionRate = ((count / data[date].first) * 100).toFixed(2);
+            resultText += `| ${index + 1} | ${count} | ${retentionRate}% |\n`;
+          });
+          
+          resultText += "\n";
+        }
+      }
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: resultText
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel retention data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -739,7 +852,60 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      // Format the results
+      let resultText = `# JQL Query [Mixpanel JQL is deprecated] Results\n\n`;
+      resultText += `**Project ID:** ${project_id}\n`;
+      if (workspace_id) resultText += `**Workspace ID:** ${workspace_id}\n`;
+      resultText += `\n## Script\n\n\`\`\`javascript\n${script}\n\`\`\`\n\n`;
+      
+      if (params) {
+        resultText += `## Parameters\n\n\`\`\`json\n${params}\n\`\`\`\n\n`;
+      }
+      
+      resultText += `## Results\n\n`;
+      
+      // Format the results based on the structure
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          resultText += "No results returned.";
+        } else {
+          // Check if the results are simple key-value pairs that can be displayed in a table
+          const firstItem = data[0];
+          const isSimpleObject = typeof firstItem === 'object' && 
+                                !Array.isArray(firstItem) && 
+                                Object.keys(firstItem).length <= 5;
+          
+          if (isSimpleObject) {
+            // Create a table header with all keys from the first item
+            const keys = Object.keys(firstItem);
+            resultText += "| " + keys.join(" | ") + " |\n";
+            resultText += "| " + keys.map(() => "---").join(" | ") + " |\n";
+            
+            // Add a row for each item
+            data.forEach(item => {
+              resultText += "| " + keys.map(key => {
+                const value = item[key];
+                return typeof value === 'object' ? JSON.stringify(value) : String(value);
+              }).join(" | ") + " |\n";
+            });
+          } else {
+            // For complex results, just show the JSON
+            resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
+          }
+        }
+      } else {
+        // For non-array results, just show the JSON
+        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
+      }
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: resultText
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error executing JQL query:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -811,7 +977,37 @@ server.tool(
       
       const data = await response.json();
       
-      return data;
+      // Format the results
+      let resultText = `# Segmentation Sum Report\n\n`;
+      resultText += `**Project ID:** ${project_id}\n`;
+      resultText += `**Event:** ${event}\n`;
+      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
+      resultText += `**Expression Summed:** ${on}\n`;
+      if (unit) resultText += `**Unit:** ${unit}\n`;
+      if (where) resultText += `**Filter:** ${where}\n`;
+      resultText += `**Computed At:** ${data.computed_at || 'Not provided'}\n\n`;
+      
+      // Create a table for the results
+      resultText += "## Results\n\n";
+      resultText += "| Date | Sum |\n";
+      resultText += "|------|-----|\n";
+      
+      // Sort dates in chronological order
+      const dates = Object.keys(data.results).sort();
+      
+      // Add rows for each date
+      for (const date of dates) {
+        resultText += `| ${date} | ${data.results[date]} |\n`;
+      }
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: resultText
+          }
+        ]
+      };
     } catch (error: unknown) {
       console.error("Error fetching Mixpanel segmentation sum data:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -923,10 +1119,24 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error querying profiles:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error querying profiles: ${error}`
+          }
+        ]
+      };
     }
   }
 );
@@ -998,10 +1208,24 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error querying frequency report:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error querying frequency report: ${error}`
+          }
+        ]
+      };
     }
   }
 );
@@ -1080,7 +1304,14 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error querying segmentation report:', error);
       throw error;
@@ -1152,7 +1383,14 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error querying segmentation bucket:', error);
       throw error;
@@ -1221,7 +1459,14 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error querying segmentation average:', error);
       throw error;
@@ -1274,7 +1519,14 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error fetching top event properties:', error);
       throw error;
@@ -1329,7 +1581,14 @@ server.tool(
       }
       
       const data = await response.json();
-      return data;
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data)
+          }
+        ]
+      };
     } catch (error) {
       console.error('Error fetching top event property values:', error);
       throw error;
