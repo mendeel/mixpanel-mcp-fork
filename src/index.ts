@@ -680,7 +680,7 @@ server.tool(
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     retention_type: z.enum(["birth", "compounded"]).optional().describe("Type of retention: 'birth' (first time) or 'compounded' (recurring). Defaults to 'birth'"),
-    born_event: z.string().optional().describe("The first event a user must do to be counted in a birth retention cohort"),
+    born_event: z.string().optional().describe("The first event a user must do to be counted in a birth retention cohort, required if retention_type is 'birth'. Can use $session_start as the born_event for general cases."),
     return_event: z.string().optional().describe("The event to generate returning counts for. If not specified, looks across all events"),
     born_where: z.string().optional().describe(`An expression to filter born_events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
                 | <expression> <binary op> <expression>
@@ -700,7 +700,7 @@ server.tool(
                 | <unary op> ::= '-' | 'not'`),
     interval: z.number().optional().describe("The number of units per individual bucketed interval. Default is 1"),
     interval_count: z.number().optional().describe("The number of individual buckets/intervals to return. Default is 1"),
-    unit: z.enum(["day", "week", "month"]).optional().describe("The interval unit: 'day', 'week', or 'month'. Default is 'day'"),
+    unit: z.enum(["day", "week", "month"]).optional().describe("The interval unit: 'day' (eg use if asked for D7 or D30), 'week' (eg use if asked for W12), or 'month' (eg use if asked for M6). Default is 'day'"),
     on: z.string().optional().describe("The property expression to segment the second event on"),
     limit: z.number().optional().describe("Return the top limit segmentation values. Only applies when 'on' is specified")
   },
