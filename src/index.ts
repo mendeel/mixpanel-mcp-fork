@@ -680,8 +680,8 @@ server.tool(
     from_date: z.string().describe("The date in yyyy-mm-dd format to begin querying from (inclusive)"),
     to_date: z.string().describe("The date in yyyy-mm-dd format to query to (inclusive)"),
     retention_type: z.enum(["birth", "compounded"]).optional().describe("Type of retention: 'birth' (first time) or 'compounded' (recurring). Defaults to 'birth'"),
-    born_event: z.string().optional().describe("The first event a user must do to be counted in a birth retention cohort, required if retention_type is 'birth'. Can use $session_start as the born_event for general cases."),
-    return_event: z.string().optional().describe("The event to generate returning counts for. If not specified, looks across all events"),
+    born_event: z.string().optional().describe("The first event a user must do to be counted in a birth retention cohort, required if retention_type is 'birth'. Can use $mp_web_page_view as the born_event for general cases."),
+    event: z.string().optional().describe("The event to generate returning counts for. If not specified, looks across all events"),
     born_where: z.string().optional().describe(`An expression to filter born_events by based on the grammar: <expression> ::= 'properties["' <property> '"]'
                 | <expression> <binary op> <expression>
                 | <unary op> <expression>
@@ -698,13 +698,13 @@ server.tool(
    <binary op> ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' |
                   '>' | '>=' | '<' | '<=' | 'in' | 'and' | 'or'
                 | <unary op> ::= '-' | 'not'`),
-    interval: z.number().optional().describe("The number of units per individual bucketed interval. Default is 1"),
-    interval_count: z.number().optional().describe("The number of individual buckets/intervals to return. Default is 1"),
-    unit: z.enum(["day", "week", "month"]).optional().describe("The interval unit: 'day' (eg use if asked for D7 or D30), 'week' (eg use if asked for W12), or 'month' (eg use if asked for M6). Default is 'day'"),
+    interval: z.number().optional().describe("The number of units per individual bucketed interval. Default is 1. DO NOT USE IF ALREADY PROVIDING UNIT."),
+    interval_count: z.number().optional().describe("The number of individual buckets/intervals to return. Default is 1. DO NOT USE IF ALREADY PROVIDING UNIT."),
+    unit: z.enum(["day", "week", "month"]).optional().describe("The interval unit: 'day' (eg use if asked for D7 or D30), 'week' (eg use if asked for W12), or 'month' (eg use if asked for M6). Default is 'day'. DO NOT USE IF ALREADY PROVIDING INTERVAL."),
     on: z.string().optional().describe("The property expression to segment the second event on"),
     limit: z.number().optional().describe("Return the top limit segmentation values. Only applies when 'on' is specified")
   },
-  async ({ project_id = DEFAULT_PROJECT_ID, workspace_id, from_date, to_date, retention_type, born_event, return_event, born_where, return_where, interval, interval_count, unit, on, limit }) => {
+  async ({ project_id = DEFAULT_PROJECT_ID, workspace_id, from_date, to_date, retention_type, born_event, event, born_where, return_where, interval, interval_count, unit, on, limit }) => {
     try {
       const credentials = `${SERVICE_ACCOUNT_USER_NAME}:${SERVICE_ACCOUNT_PASSWORD}`;
       const encodedCredentials = Buffer.from(credentials).toString('base64');
@@ -718,7 +718,7 @@ server.tool(
       if (workspace_id) queryParams.append('workspace_id', workspace_id);
       if (retention_type) queryParams.append('retention_type', retention_type);
       if (born_event) queryParams.append('born_event', born_event);
-      if (return_event) queryParams.append('event', return_event);
+      if (event) queryParams.append('event', event);
       if (born_where) queryParams.append('born_where', born_where);
       if (return_where) queryParams.append('where', return_where);
       if (interval) queryParams.append('interval', interval.toString());
@@ -746,46 +746,11 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# Retention Report\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
-      if (retention_type) resultText += `**Retention Type:** ${retention_type}\n`;
-      if (born_event) resultText += `**Born Event:** ${born_event}\n`;
-      if (return_event) resultText += `**Return Event:** ${return_event}\n`;
-      if (unit) resultText += `**Unit:** ${unit}\n`;
-      resultText += "\n";
-      
-      // Format the cohort data
-      resultText += "## Cohort Data\n\n";
-      
-      // Create a table for each cohort date
-      for (const date in data) {
-        if (date !== "status" && data[date]) {
-          resultText += `### Cohort: ${date}\n\n`;
-          
-          // Show first day count
-          resultText += `**First Day Count:** ${data[date].first}\n\n`;
-          
-          // Create a table for retention data
-          resultText += "| Period | Count | Retention Rate |\n";
-          resultText += "|--------|-------|---------------|\n";
-          
-          // Add rows for each retention period
-          data[date].counts.forEach((count: number, index: number) => {
-            const retentionRate = ((count / data[date].first) * 100).toFixed(2);
-            resultText += `| ${index + 1} | ${count} | ${retentionRate}% |\n`;
-          });
-          
-          resultText += "\n";
-        }
-      }
-      
       return {
         content: [
           {
             type: "text",
-            text: resultText
+            text: JSON.stringify(data)
           }
         ]
       };
@@ -852,57 +817,11 @@ server.tool(
       
       const data = await response.json();
       
-      // Format the results
-      let resultText = `# JQL Query [Mixpanel JQL is deprecated] Results\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      if (workspace_id) resultText += `**Workspace ID:** ${workspace_id}\n`;
-      resultText += `\n## Script\n\n\`\`\`javascript\n${script}\n\`\`\`\n\n`;
-      
-      if (params) {
-        resultText += `## Parameters\n\n\`\`\`json\n${params}\n\`\`\`\n\n`;
-      }
-      
-      resultText += `## Results\n\n`;
-      
-      // Format the results based on the structure
-      if (Array.isArray(data)) {
-        if (data.length === 0) {
-          resultText += "No results returned.";
-        } else {
-          // Check if the results are simple key-value pairs that can be displayed in a table
-          const firstItem = data[0];
-          const isSimpleObject = typeof firstItem === 'object' && 
-                                !Array.isArray(firstItem) && 
-                                Object.keys(firstItem).length <= 5;
-          
-          if (isSimpleObject) {
-            // Create a table header with all keys from the first item
-            const keys = Object.keys(firstItem);
-            resultText += "| " + keys.join(" | ") + " |\n";
-            resultText += "| " + keys.map(() => "---").join(" | ") + " |\n";
-            
-            // Add a row for each item
-            data.forEach(item => {
-              resultText += "| " + keys.map(key => {
-                const value = item[key];
-                return typeof value === 'object' ? JSON.stringify(value) : String(value);
-              }).join(" | ") + " |\n";
-            });
-          } else {
-            // For complex results, just show the JSON
-            resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
-          }
-        }
-      } else {
-        // For non-array results, just show the JSON
-        resultText += "```json\n" + JSON.stringify(data, null, 2) + "\n```";
-      }
-      
       return {
         content: [
           {
             type: "text",
-            text: resultText
+            text: JSON.stringify(data)
           }
         ]
       };
@@ -976,35 +895,12 @@ server.tool(
       }
       
       const data = await response.json();
-      
-      // Format the results
-      let resultText = `# Segmentation Sum Report\n\n`;
-      resultText += `**Project ID:** ${project_id}\n`;
-      resultText += `**Event:** ${event}\n`;
-      resultText += `**Date Range:** ${from_date} to ${to_date}\n`;
-      resultText += `**Expression Summed:** ${on}\n`;
-      if (unit) resultText += `**Unit:** ${unit}\n`;
-      if (where) resultText += `**Filter:** ${where}\n`;
-      resultText += `**Computed At:** ${data.computed_at || 'Not provided'}\n\n`;
-      
-      // Create a table for the results
-      resultText += "## Results\n\n";
-      resultText += "| Date | Sum |\n";
-      resultText += "|------|-----|\n";
-      
-      // Sort dates in chronological order
-      const dates = Object.keys(data.results).sort();
-      
-      // Add rows for each date
-      for (const date of dates) {
-        resultText += `| ${date} | ${data.results[date]} |\n`;
-      }
-      
+
       return {
         content: [
           {
             type: "text",
-            text: resultText
+            text: JSON.stringify(data)
           }
         ]
       };
