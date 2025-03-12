@@ -673,7 +673,7 @@ server.tool(
 
 server.tool(
   "query_retention_report",
-  "Get data from your Retention reports. Useful for analyzing user engagement over time, measuring product stickiness, and understanding how well your product retains users after specific actions.",
+  "Get data from your Retention reports. Useful for analyzing user engagement over time, measuring product stickiness, and understanding how well your product retains users after specific actions. Only use params interval or unit, not both.",
   {
     project_id: z.string().describe("The Mixpanel project ID. Optional since it has a default.").optional(),
     workspace_id: z.string().optional().describe("The ID of the workspace if applicable"),
