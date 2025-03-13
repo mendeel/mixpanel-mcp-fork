@@ -71,7 +71,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel events: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -136,7 +137,8 @@ server.tool(
             type: "text",
             text: `Error fetching profile event activity: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -195,7 +197,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel events: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -292,7 +295,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel event counts: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -403,7 +407,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel event property values: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -467,7 +472,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel insights: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -541,7 +547,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel funnel data: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -603,7 +610,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel funnels list: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -665,7 +673,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel cohorts list: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -763,7 +772,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel retention data: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -834,7 +844,8 @@ server.tool(
             type: "text",
             text: `Error executing JQL query: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -913,7 +924,8 @@ server.tool(
             type: "text",
             text: `Error fetching Mixpanel segmentation sum data: ${errorMessage}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -1031,7 +1043,8 @@ server.tool(
             type: "text",
             text: `Error querying profiles: ${error}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -1120,7 +1133,8 @@ server.tool(
             type: "text",
             text: `Error querying frequency report: ${error}`
           }
-        ]
+        ],
+        isError: true
       };
     }
   }
@@ -1289,7 +1303,15 @@ server.tool(
       };
     } catch (error) {
       console.error('Error querying segmentation bucket:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error querying segmentation bucket: ${error}`
+          }
+        ],
+        isError: true
+      };
     }
   }
 );
@@ -1361,11 +1383,20 @@ server.tool(
             type: "text",
             text: JSON.stringify(data)
           }
-        ]
+        ],
+        isError: true
       };
     } catch (error) {
       console.error('Error querying segmentation average:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error querying segmentation average: ${error}`
+          }
+        ],
+        isError: true
+      };
     }
   }
 );
@@ -1425,7 +1456,15 @@ server.tool(
       };
     } catch (error) {
       console.error('Error fetching top event properties:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error fetching top event properties: ${error}`
+          }
+        ],
+        isError: true
+      };
     }
   }
 );
@@ -1487,7 +1526,15 @@ server.tool(
       };
     } catch (error) {
       console.error('Error fetching top event property values:', error);
-      throw error;
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error fetching top event property values: ${error}`
+          }
+        ],
+        isError: true
+      };
     }
   }
 );
