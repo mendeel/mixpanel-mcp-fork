@@ -10,7 +10,7 @@ const server = new McpServer({
 const args = process.argv.slice(2);
 
 if (args.length === 0) {
-  console.error("Please provide a Mixpanel service account username and password and a project ID");
+  console.error("Please provide a Mixpanel service account username, password, project ID and region");
   process.exit(1);
 }
 
@@ -19,7 +19,7 @@ const SERVICE_ACCOUNT_PASSWORD = process.env.SERVICE_ACCOUNT_PASSWORD || args[1]
 const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2] || "YOUR PROJECT ID";
 const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "us";
 
-const MIXPANEL_BASE_URL = MIXPANEL_REGION === "eu" ? "https://eu.mixpanel.com/api/query" : "${MIXPANEL_BASE_URL}";
+const MIXPANEL_BASE_URL = MIXPANEL_REGION === "eu" ? "https://eu.mixpanel.com/api/query" : "https://mixpanel.com/api/query";
 
 server.tool(
   "get_today_top_events",
