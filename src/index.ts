@@ -17,7 +17,7 @@ if (args.length === 0) {
 const SERVICE_ACCOUNT_USER_NAME = process.env.SERVICE_ACCOUNT_USER_NAME || args[0] || "YOUR SERVICE ACCOUNT USERNAME";
 const SERVICE_ACCOUNT_PASSWORD = process.env.SERVICE_ACCOUNT_PASSWORD || args[1] || "YOUR SERVICE ACCOUNT PASSWORD";
 const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2] || "YOUR PROJECT ID";
-const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "YOUR PROJECT REGION (us/eu)";
+const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "us";
 
 const MIXPANEL_BASE_URL = MIXPANEL_REGION === "eu" ? "https://eu.mixpanel.com/api/query" : "${MIXPANEL_BASE_URL}";
 
