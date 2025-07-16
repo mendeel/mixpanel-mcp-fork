@@ -9,15 +9,15 @@ const server = new McpServer({
 
 const args = process.argv.slice(2);
 
-if (args.length === 0) {
-  console.error("Please provide a Mixpanel service account username, password, project ID and region");
+const SERVICE_ACCOUNT_USER_NAME = process.env.SERVICE_ACCOUNT_USER_NAME || args[0];
+const SERVICE_ACCOUNT_PASSWORD = process.env.SERVICE_ACCOUNT_PASSWORD || args[1];
+const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2];
+const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "us";
+
+if (!SERVICE_ACCOUNT_USER_NAME || !SERVICE_ACCOUNT_PASSWORD || !DEFAULT_PROJECT_ID) {
+  console.error("Please provide a Mixpanel service account username, password, and project ID. You can set SERVICE_ACCOUNT_USER_NAME, SERVICE_ACCOUNT_PASSWORD, and DEFAULT_PROJECT_ID environment variables, or pass them as command-line arguments.");
   process.exit(1);
 }
-
-const SERVICE_ACCOUNT_USER_NAME = process.env.SERVICE_ACCOUNT_USER_NAME || args[0] || "YOUR SERVICE ACCOUNT USERNAME";
-const SERVICE_ACCOUNT_PASSWORD = process.env.SERVICE_ACCOUNT_PASSWORD || args[1] || "YOUR SERVICE ACCOUNT PASSWORD";
-const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2] || "YOUR PROJECT ID";
-const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "us";
 
 const MIXPANEL_BASE_URL = MIXPANEL_REGION === "eu" ? "https://eu.mixpanel.com/api/query" : "https://mixpanel.com/api/query";
 
