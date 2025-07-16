@@ -17,6 +17,9 @@ if (args.length === 0) {
 const SERVICE_ACCOUNT_USER_NAME = process.env.SERVICE_ACCOUNT_USER_NAME || args[0] || "YOUR SERVICE ACCOUNT USERNAME";
 const SERVICE_ACCOUNT_PASSWORD = process.env.SERVICE_ACCOUNT_PASSWORD || args[1] || "YOUR SERVICE ACCOUNT PASSWORD";
 const DEFAULT_PROJECT_ID = process.env.DEFAULT_PROJECT_ID || args[2] || "YOUR PROJECT ID";
+const MIXPANEL_REGION = process.env.MIXPANEL_REGION || args[3] || "YOUR PROJECT REGION (us/eu)";
+
+const MIXPANEL_BASE_URL = MIXPANEL_REGION === "eu" ? "https://eu.mixpanel.com/api/query" : "${MIXPANEL_BASE_URL}";
 
 server.tool(
   "get_today_top_events",
@@ -33,7 +36,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct URL with query parameters
-      const url = `https://mixpanel.com/api/query/events/top?project_id=${project_id}&type=${type}${limit ? `&limit=${limit}` : ''}`;
+      const url = `${MIXPANEL_BASE_URL}/events/top?project_id=${project_id}&type=${type}${limit ? `&limit=${limit}` : ''}`;
       
       // Set up request options
       const options = {
@@ -95,7 +98,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct URL with query parameters
-      let url = `https://mixpanel.com/api/query/stream/query?project_id=${project_id}&distinct_ids=${encodeURIComponent(distinct_ids)}&from_date=${from_date}&to_date=${to_date}`;
+      let url = `${MIXPANEL_BASE_URL}/stream/query?project_id=${project_id}&distinct_ids=${encodeURIComponent(distinct_ids)}&from_date=${from_date}&to_date=${to_date}`;
       
       // Add optional workspace_id if provided
       if (workspace_id) {
@@ -159,7 +162,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct URL with query parameters
-      const url = `https://mixpanel.com/api/query/events/names?project_id=${project_id}&type=${type}${limit ? `&limit=${limit}` : ''}`;
+      const url = `${MIXPANEL_BASE_URL}/events/names?project_id=${project_id}&type=${type}${limit ? `&limit=${limit}` : ''}`;
       
       // Set up request options
       const options = {
@@ -257,7 +260,7 @@ server.tool(
       queryParams.append('event', event);
       
       // Construct URL with query parameters
-      const url = `https://mixpanel.com/api/query/events?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/events?${queryParams.toString()}`;
       
       // Set up request options
       const options = {
@@ -369,7 +372,7 @@ server.tool(
       }
       
       // Construct URL with query parameters
-      const url = `https://mixpanel.com/api/query/events/properties?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/events/properties?${queryParams.toString()}`;
       
       // Set up request options
       const options = {
@@ -436,7 +439,7 @@ server.tool(
         queryParams.append('workspace_id', workspace_id);
       }
       
-      const url = `https://mixpanel.com/api/query/insights?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/insights?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -511,7 +514,7 @@ server.tool(
       if (interval) queryParams.append('interval', interval.toString());
       if (unit) queryParams.append('unit', unit);
       
-      const url = `https://mixpanel.com/api/query/funnels?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/funnels?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -574,7 +577,7 @@ server.tool(
         queryParams.append('workspace_id', workspace_id);
       }
       
-      const url = `https://mixpanel.com/api/query/funnels/list?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/funnels/list?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -637,7 +640,7 @@ server.tool(
         queryParams.append('workspace_id', workspace_id);
       }
       
-      const url = `https://mixpanel.com/api/query/cohorts/list?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/cohorts/list?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -736,7 +739,7 @@ server.tool(
       if (on) queryParams.append('on', on);
       if (limit) queryParams.append('limit', limit.toString());
       
-      const url = `https://mixpanel.com/api/query/retention?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/retention?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -799,7 +802,7 @@ server.tool(
       queryParams.append('project_id', project_id);
       if (workspace_id) queryParams.append('workspace_id', workspace_id);
       
-      const url = `https://mixpanel.com/api/query/jql?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/jql?${queryParams.toString()}`;
       
       // Prepare form data for POST request
       const formData = new URLSearchParams();
@@ -888,7 +891,7 @@ server.tool(
       if (unit) queryParams.append('unit', unit);
       if (where) queryParams.append('where', where);
       
-      const url = `https://mixpanel.com/api/query/segmentation/sum?${queryParams.toString()}`;
+      const url = `${MIXPANEL_BASE_URL}/segmentation/sum?${queryParams.toString()}`;
       
       const options = {
         method: 'GET',
@@ -984,7 +987,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with project_id
-      let url = `https://mixpanel.com/api/query/engage?project_id=${project_id}`;
+      let url = `${MIXPANEL_BASE_URL}/engage?project_id=${project_id}`;
       
       // Add optional workspace_id if provided
       if (workspace_id) {
@@ -1090,7 +1093,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/retention/addiction?project_id=${project_id}&from_date=${from_date}&to_date=${to_date}&unit=${unit}&addiction_unit=${addiction_unit}`;
+      let url = `${MIXPANEL_BASE_URL}/retention/addiction?project_id=${project_id}&from_date=${from_date}&to_date=${to_date}&unit=${unit}&addiction_unit=${addiction_unit}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
@@ -1184,7 +1187,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/segmentation?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}`;
+      let url = `${MIXPANEL_BASE_URL}/segmentation?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
@@ -1267,7 +1270,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/segmentation/numeric?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
+      let url = `${MIXPANEL_BASE_URL}/segmentation/numeric?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
@@ -1352,7 +1355,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/segmentation/average?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
+      let url = `${MIXPANEL_BASE_URL}/segmentation/average?project_id=${project_id}&event=${encodeURIComponent(event)}&from_date=${from_date}&to_date=${to_date}&on=${encodeURIComponent(on)}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
@@ -1422,7 +1425,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/events/properties/top?project_id=${project_id}&event=${encodeURIComponent(event)}`;
+      let url = `${MIXPANEL_BASE_URL}/events/properties/top?project_id=${project_id}&event=${encodeURIComponent(event)}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
@@ -1492,7 +1495,7 @@ server.tool(
       const encodedCredentials = Buffer.from(credentials).toString('base64');
       
       // Construct base URL with required parameters
-      let url = `https://mixpanel.com/api/query/events/properties/values?project_id=${project_id}&event=${encodeURIComponent(event)}&name=${encodeURIComponent(name)}`;
+      let url = `${MIXPANEL_BASE_URL}/events/properties/values?project_id=${project_id}&event=${encodeURIComponent(event)}&name=${encodeURIComponent(name)}`;
       
       // Add optional parameters if they exist
       if (workspace_id) url += `&workspace_id=${workspace_id}`;
