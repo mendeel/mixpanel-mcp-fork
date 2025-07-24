@@ -28,7 +28,7 @@ startCommand:
     |-
     (config) => ({
       command: 'node',
-      args: ['build/index.js', config.username, config.password, config.projectId]
+      args: ['build/index.js', config.username, config.password, config.projectId, config.region]
     })
   exampleConfig:
     username: demoUser
